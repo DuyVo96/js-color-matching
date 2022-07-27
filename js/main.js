@@ -1,6 +1,16 @@
 import { GAME_STATUS, PAIRS_COUNT } from './constants.js';
-import { getColorElementList, getColorListElement, getInActiveColorList } from './selectors.js';
-import { getRandomColorPairs } from './utils.js';
+import {
+  getColorElementList,
+  getColorListElement,
+  getInActiveColorList,
+  getPlayAgainButton,
+} from './selectors.js';
+import {
+  getRandomColorPairs,
+  hidePlayAgainButton,
+  setTimerText,
+  showPlayAgainButton,
+} from './utils.js';
 
 // Global variables
 let selections = [];
@@ -15,14 +25,14 @@ let gameStatus = GAME_STATUS.PLAYING;
 
 function handleColorClick(liElement) {
   const shouldBlockClick = [GAME_STATUS.BLOCKING, GAME_STATUS.FINISHED].includes(gameStatus);
+  const isClicked = liElement.classList.contains('active');
 
-  if (!liElement || shouldBlockClick) return;
+  if (!liElement || isClicked || shouldBlockClick) return;
 
   liElement.classList.add('active');
 
   // save clicked cell to selection = []
   selections.push(liElement);
-  console.log('cell click', selections);
 
   if (selections.length < 2) return;
 
@@ -37,7 +47,10 @@ function handleColorClick(liElement) {
 
     if (isWin) {
       // show replay
+      showPlayAgainButton();
       // show you win
+      setTimerText('YOU WIN');
+      gameStatus = GAME_STATUS.FINISHED;
     }
     selections = [];
     return;
@@ -49,7 +62,6 @@ function handleColorClick(liElement) {
   gameStatus = GAME_STATUS.BLOCKING;
 
   setTimeout(() => {
-    console.log('timeout run');
     selections[0].classList.remove('active');
     selections[1].classList.remove('active');
 
@@ -87,8 +99,38 @@ function attachEventForColorList() {
   });
 }
 
+function resetGame() {
+  // reset global variable
+  gameStatus = GAME_STATUS.PLAYING;
+  selections = [];
+  // reset DOM elements
+  //  - li active class from li
+  //  - hide replay button
+  //  - clear you win text
+
+  const colorElementList = getColorElementList();
+  for (const colorElement of colorElementList) {
+    colorElement.classList.remove('active');
+  }
+
+  hidePlayAgainButton();
+
+  setTimerText('');
+
+  // re-generate game color
+  initColor();
+}
+
+function attachEventForPlayAgainButton() {
+  const playAgainButton = getPlayAgainButton();
+  if (!playAgainButton) return;
+
+  playAgainButton.addEventListener('click', resetGame);
+}
+
 // main
 (() => {
   initColor();
   attachEventForColorList();
+  attachEventForPlayAgainButton();
 })();
